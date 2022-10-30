@@ -1,0 +1,762 @@
+options:
+  parameters:
+    author: ''
+    category: '[GRC Hier Blocks]'
+    cmake_opt: ''
+    comment: ''
+    copyright: ''
+    description: ''
+    gen_cmake: 'On'
+    gen_linking: dynamic
+    generate_options: qt_gui
+    hier_block_src_path: '.:'
+    id: sdrplay
+    max_nouts: '0'
+    output_language: python
+    placement: (0,0)
+    qt_qss_theme: ''
+    realtime_scheduling: ''
+    run: 'True'
+    run_command: '{python} -u {filename}'
+    run_options: prompt
+    sizing_mode: fixed
+    thread_safe_setters: ''
+    title: RSP1A
+    window_size: ''
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [5, 53]
+    rotation: 0
+    state: enabled
+
+blocks:
+- name: center_freq
+  id: variable
+  parameters:
+    comment: ''
+    value: 6.6e6
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [267, 58]
+    rotation: 0
+    state: disabled
+- name: center_freq
+  id: variable_qtgui_range
+  parameters:
+    comment: ''
+    gui_hint: ''
+    label: ''
+    min_len: '200'
+    orient: Qt.Horizontal
+    rangeType: float
+    start: 0e6
+    step: 100e3
+    stop: 100e6
+    value: 5e6
+    widget: counter_slider
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [363, 54]
+    rotation: 0
+    state: enabled
+- name: fft_size
+  id: variable
+  parameters:
+    comment: ''
+    value: '8192'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [83, 146]
+    rotation: 0
+    state: true
+- name: filter_bandwidth
+  id: variable
+  parameters:
+    comment: ''
+    value: 8e6
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [181, 121]
+    rotation: 0
+    state: enabled
+- name: samp_rate
+  id: variable
+  parameters:
+    comment: ''
+    value: 10e6
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [181, 57]
+    rotation: 0
+    state: enabled
+- name: blocks_null_sink_0
+  id: blocks_null_sink
+  parameters:
+    affinity: ''
+    alias: ''
+    bus_structure_sink: '[[0,],]'
+    comment: ''
+    num_inputs: '1'
+    type: complex
+    vlen: '1'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [611, 343]
+    rotation: 0
+    state: disabled
+- name: blocks_throttle_0
+  id: blocks_throttle
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: ''
+    ignoretag: 'True'
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    samples_per_second: samp_rate
+    type: complex
+    vlen: '1'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [477, 249]
+    rotation: 0
+    state: enabled
+- name: blocks_vector_sink_x_1
+  id: blocks_vector_sink_x
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: ''
+    reserve_items: '1024'
+    type: float
+    vlen: '1024'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [1285, 537]
+    rotation: 0
+    state: disabled
+- name: epy_block_0
+  id: epy_block
+  parameters:
+    _source_code: "\"\"\"\nEmbedded Python Blocks:\n\nEach time this file is saved,\
+      \ GRC will instantiate the first class it finds\nto get ports and parameters\
+      \ of your block. The arguments to __init__  will\nbe the parameters. All of\
+      \ them are required to have default values!\n\"\"\"\n\nimport numpy as np\n\
+      from gnuradio import gr\nimport pmt\n\n\nlocal_ctr = 1\nmsg_ctr = 0\n\nclass\
+      \ blk(gr.sync_block):  # other base classes are basic_block, decim_block, interp_block\n\
+      \    \"\"\"Embedded Python Block example - a simple multiply const\"\"\"\n\n\
+      \    def __init__(self, fft_size=1024, poll_rate=4):  # only default arguments\
+      \ here\n        # if an attribute with the same name as a parameter is found,\n\
+      \        # a callback is registered (properties work, too).\n        self.fft_size\
+      \ = fft_size\n        self.poll_rate = poll_rate\n        self.msg_list = [pmt.from_double(15e6),pmt.from_double(6.6e6)]\n\
+      \n        \"\"\"arguments to this function show up as parameters in GRC\"\"\"\
+      \n\n        gr.sync_block.__init__(\n            self,\n            name='Block\
+      \ for Sending Messages',   # will show up in GRC\n            in_sig=[(np.float32,\
+      \ self.fft_size)],\n            out_sig=[(np.float32, self.fft_size)]\n    \
+      \    )\n        self.message_port_register_out(pmt.intern('out_port'))\n\n \
+      \   def work(self, input_items, output_items):\n        global msg_ctr, local_ctr\n\
+      \n        output_items[0][:] = input_items[0]\n        print(\"Center freq:\
+      \ \",self.msg_list[msg_ctr])\n\n        if local_ctr == self.poll_rate:\n  \
+      \          #https://wiki.gnuradio.org/index.php/Soapy#Messages\n           \
+      \ # create pmt dict\n            msg_dict = pmt.make_dict()\n            key0\
+      \ = pmt.intern(\"freq\") # center freq\n            val0 = self.msg_list[msg_ctr]\n\
+      \            msg_dict = pmt.dict_add(msg_dict, key0, val0)\n\n            #\
+      \ self.message_port_pub(pmt.intern('out_port'),\n            #             \
+      \          self.msg_list[msg_ctr])\n            # self.message_port_pub(pmt.intern('out_port'),\
+      \ \\\n            #     pmt.cons(pmt.intern(\"freq\"),self.msg_list[msg_ctr]))\
+      \ \n            self.message_port_pub(pmt.intern(\"out_port\"), msg_dict)\n\
+      \            msg_ctr += 1\n            local_ctr = 1\n            \n       \
+      \     if msg_ctr == len(self.msg_list):\n                msg_ctr = 0\n     \
+      \   else:\n            local_ctr += 1\n        return len(output_items[0])\n"
+    affinity: ''
+    alias: ''
+    comment: ''
+    fft_size: fft_size
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    poll_rate: '10'
+  states:
+    _io_cache: ('Block for Sending Messages', 'blk', [('fft_size', '1024'), ('poll_rate',
+      '4')], [('0', 'float', 1024)], [('0', 'float', 1024), ('out_port', 'message',
+      1)], 'Embedded Python Block example - a simple multiply const', ['fft_size',
+      'poll_rate'])
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [933, 437]
+    rotation: 0
+    state: disabled
+- name: epy_block_0_0
+  id: epy_block
+  parameters:
+    _source_code: "\"\"\"\nEmbedded Python Blocks:\n\nEach time this file is saved,\
+      \ GRC will instantiate the first class it finds\nto get ports and parameters\
+      \ of your block. The arguments to __init__  will\nbe the parameters. All of\
+      \ them are required to have default values!\n\"\"\"\nimport sys\nimport numpy\
+      \ as np\nfrom gnuradio import gr\nfrom matplotlib import pyplot as plt\nfrom\
+      \ scipy.signal import find_peaks\nfrom configparser import ConfigParser\nimport\
+      \ json\n\n# init parser\nparser = ConfigParser()\nparser.read(\"/home/ltetest/Desktop/recording-mic-detection/python\
+      \ scripts/airspy/config.ini\")\ncname = 'max-peak-detection'\n\nstart_cf = parser.getint(cname,\
+      \ 'starting_center_freq')\nrow_size = parser.getint(cname, 'n_sweeps')\ncol_size\
+      \ = parser.getint(cname, 'sampl_per_sweep')\nfreq_div = parser.getint(cname,\
+      \ 'freq_per_sweep')\nexpected_peak = parser.getfloat(cname, 'expected_peak')\n\
+      err_freq = parser.getfloat(cname, 'err_freq')\nmax_ctr = parser.getint(cname,\
+      \ 'max_ct')\npeak_thresh = parser.getfloat(cname, 'peak_thresh')\nerr_amp =\
+      \ parser.getfloat(cname, 'err_amp')\n\nfs = row_size * freq_div\nN = row_size\
+      \ * col_size\n\nctr = 0\nscore = 0\n\n# init lists / matrices\nfreq_bitmap =\
+      \ np.zeros(row_size,dtype=bool)\nlogfft_mat = np.zeros([row_size,col_size],\
+      \ dtype=np.float32)\n\n\nclass blk(gr.sync_block):  # other base classes are\
+      \ basic_block, decim_block, interp_block\n    \"\"\"Embedded Python Block example\
+      \ - a simple multiply const\"\"\"\n\n    def __init__(self, fft_size=1024, center_freq=2e6):\
+      \  # only default arguments here\n        self.fft_size = fft_size\n       \
+      \ self.center_freq = center_freq\n        \"\"\"arguments to this function show\
+      \ up as parameters in GRC\"\"\"\n        gr.sync_block.__init__(\n         \
+      \   self,\n            name='Max Peak Detection',   # will show up in GRC\n\
+      \            in_sig=[(np.float32, self.fft_size)],\n            # out_sig=[(np.float32,\
+      \ row_size*col_size)]\n            out_sig=None\n        )\n\n\n    def work(self,\
+      \ input_items, output_items):\n        global freq_bitmap, logfft_mat, ctr,\
+      \ score\n\n        \"\"\"example: multiply with constant\"\"\"\n        in0\
+      \ = input_items[0][0]\n        k = int(np.around((self.center_freq-start_cf)/freq_div))\n\
+      \        # print(\"2: Center freq: \", self.center_freq)\n\n        freq_bitmap[k]\
+      \ = True\n        sidx = int(self.fft_size/2-col_size/2)\n        eidx = int(self.fft_size/2+col_size/2)\n\
+      \        logfft_mat[k][:] = in0[sidx:eidx]\n\n        if(np.all(freq_bitmap)):\n\
+      \            ctr = ctr + 1\n\n            logfft_list = logfft_mat.flatten()\n\
+      \            ly = logfft_list #- np.average(logfft_list)\n            xf = np.linspace(0,\
+      \ fs, N)/1000000.0\n            \n\n            freq_bitmap = np.zeros(row_size,\
+      \ dtype=bool)\n            logfft_mat = np.zeros([row_size,col_size], dtype=np.float32)\n\
+      \n            # peak_pos = np.argmax(ly)\n            peak_pos_bool = (np.amax(ly)\
+      \ - ly) < err_amp\n            peak_pos = np.where(peak_pos_bool)[0]\n     \
+      \       peak_val = ly[peak_pos_bool]\n            # print(np.shape(peaks))\n\
+      \            fpeak = peak_pos * fs/float(N) / 1e6\n            print(\"Ctr:\
+      \ \", ctr, \", Peak Position: \", fpeak, \"MHz, Peak Amplitude: \", peak_val,\
+      \ \"dBm\")\n \n            if len(fpeak) == 1:\n                if np.abs(fpeak\
+      \ - expected_peak) < err_freq:\n                    score = score + 1\n    \
+      \                print(\"Score: \",score)\n                # plt.plot(xf, ly)\n\
+      \                # plt.show()\n                # else:\n                #  \
+      \   plt.plot(xf, ly)\n                #     plt.show()\n\n            if ctr\
+      \ == max_ctr:\n                print(\"Accuracy: \",np.around(100 * score/max_ctr,2),\"\
+      %\")\n                ctr = 0\n                score = 0\n\n        return len(input_items[0])"
+    affinity: ''
+    alias: ''
+    center_freq: center_freq
+    comment: ''
+    fft_size: fft_size
+    maxoutbuf: '0'
+    minoutbuf: '0'
+  states:
+    _io_cache: ('Max Peak Detection', 'blk', [('fft_size', '1024'), ('center_freq',
+      '2000000.0')], [('0', 'float', 1024)], [], 'Embedded Python Block example -
+      a simple multiply const', ['center_freq', 'fft_size'])
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [1253, 249]
+    rotation: 0
+    state: disabled
+- name: epy_block_0_1
+  id: epy_block
+  parameters:
+    _source_code: "\"\"\"\nEmbedded Python Blocks:\n\nEach time this file is saved,\
+      \ GRC will instantiate the first class it finds\nto get ports and parameters\
+      \ of your block. The arguments to __init__  will\nbe the parameters. All of\
+      \ them are required to have default values!\n\"\"\"\nimport sys\nimport numpy\
+      \ as np\nfrom gnuradio import gr\nfrom matplotlib import pyplot as plt\nfrom\
+      \ scipy.signal import find_peaks\nfrom configparser import ConfigParser\nimport\
+      \ json\n\n# init parser\nparser = ConfigParser()\nparser.read(\"/home/ltetest/Desktop/recording-mic-detection/python\
+      \ scripts/airspy/config.ini\")\ncname = 'grc-phase-1'\n\npath_folders = json.loads(parser.get(cname,\
+      \ 'syspath_addons'))\n\nfor folder in path_folders:\n    sys.path.append(folder)\n\
+      \nimport clk_freq_detection as cfd \nimport peak_detection as pd\n\nstart_cf\
+      \ = parser.getint(cname, 'starting_center_freq')\nrow_size = parser.getint(cname,\
+      \ 'n_sweeps')\ncol_size = parser.getint(cname, 'sampl_per_sweep')\nfreq_div\
+      \ = parser.getint(cname, 'freq_per_sweep')\nmax_harmonic = parser.getint(cname,\
+      \ 'max_harmonic')\n\nfs = row_size * freq_div\nN = row_size * col_size\n\nharmonics\
+      \ = np.arange(1,max_harmonic,2)\nn_harmonics = len(harmonics)\n\n# peak detection\
+      \ param\nheight = parser.getfloat(cname, 'height') #in dB\ndist = parser.getfloat(cname,\
+      \ 'dist') #in samples\n# clk freq detection param\nscore = parser.getint(cname,\
+      \ 'score')\nmin_freq = parser.getint(cname, 'min_freq')\nmax_freq = parser.getint(cname,\
+      \ 'max_freq')\nerr_freq = parser.getfloat(cname, 'err_freq')\n\n# folder to\
+      \ save data\nsave_folder = parser.get(cname, \"folder\")\n\n# init lists / matrices\n\
+      freq_bitmap = np.zeros(row_size,dtype=bool)\nlogfft_mat = np.zeros([row_size,col_size],\
+      \ dtype=np.float32)\n\n\nclass blk(gr.sync_block):  # other base classes are\
+      \ basic_block, decim_block, interp_block\n    \"\"\"Embedded Python Block example\
+      \ - a simple multiply const\"\"\"\n\n    def __init__(self, fft_size=1024, center_freq=2e6,\
+      \ fname=\"tmp.bin\"):  # only default arguments here\n        self.fft_size\
+      \ = fft_size\n        self.center_freq = center_freq\n        self.fname = fname\n\
+      \        \"\"\"arguments to this function show up as parameters in GRC\"\"\"\
+      \n        gr.sync_block.__init__(\n            self,\n            name='1-in-N-peak-detection',\
+      \   # will show up in GRC\n            in_sig=[(np.float32, self.fft_size)],\n\
+      \            # out_sig=[(np.float32, row_size*col_size)]\n            out_sig=None\n\
+      \        )\n\n\n    def work(self, input_items, output_items):\n        global\
+      \ freq_bitmap, logfft_mat\n        \n        # if(np.all(freq_bitmap)):\n  \
+      \      #     logfft_mat = np.zeros([row_size,col_size], dtype=np.float32)\n\n\
+      \        \"\"\"example: multiply with constant\"\"\"\n        in0 = input_items[0][0]\n\
+      \        k = int(np.around((self.center_freq-start_cf)/freq_div))\n        #\
+      \ print(\"2: Center freq: \", self.center_freq)\n\n        freq_bitmap[k] =\
+      \ True\n        sidx = int(self.fft_size/2-col_size/2)\n        eidx = int(self.fft_size/2+col_size/2)\n\
+      \        logfft_mat[k][:] = in0[sidx:eidx]\n\n        # output_items[0][0][:]\
+      \ = logfft_mat.flatten()\n        if(np.all(freq_bitmap)):\n            # print(\"\
+      All values satisfied!\")\n            \n            logfft_list = logfft_mat.flatten()\n\
+      \            ly = logfft_list - np.average(logfft_list)\n            # print(np.shape(ly))\n\
+      \            # xf = np.linspace(0, fs, N)/1000000.0\n            # plt.plot(xf,ly)\n\
+      \            # plt.show()\n\n            with open(save_folder + self.fname,\
+      \ 'ab') as f:\n                np.save(f, logfft_list, allow_pickle=True)\n\n\
+      \n            freq_bitmap = np.zeros(row_size, dtype=bool)\n            logfft_mat\
+      \ = np.zeros([row_size,col_size], dtype=np.float32)\n            # else:\n \
+      \           #     print(np.where(freq_bitmap))\n            # print(np.shape(output_items))\n\
+      \n            peaks, _ = pd.amplitude_based(ly, height, dist)\n            #\
+      \ print(np.shape(peaks))\n            fpeaks = peaks * fs/float(N)\n       \
+      \     # print(\"fpeaks: \", fpeaks)\n            pred_clk_freq_list, _ = cfd.detect_clk_freqs(fpeaks,\
+      \ \\\n                score, harmonics, min_freq, max_freq, err_freq)\n\n  \
+      \          if pred_clk_freq_list.size != 0:\n                print(\"Clock frequency\
+      \ present at \", pred_clk_freq_list, \"kHz!!\")\n            else:\n       \
+      \         print(\"Clock frequency NOT present\")\n\n            # _len = len(data)\n\
+      \            # # assert _len <= self.output_size\n            # for x in range(_len):\n\
+      \            #      output_items[0][x] = ord(data[x])\n        return len(input_items[0])"
+    affinity: ''
+    alias: ''
+    center_freq: center_freq
+    comment: ''
+    fft_size: fft_size
+    fname: '"dell_5459_ubuntu_recording.bin"'
+    maxoutbuf: '0'
+    minoutbuf: '0'
+  states:
+    _io_cache: ('1-in-N-peak-detection', 'blk', [('fft_size', '1024'), ('center_freq',
+      '2000000.0'), ('fname', "'tmp.bin'")], [('0', 'float', 1024)], [], 'Embedded
+      Python Block example - a simple multiply const', ['center_freq', 'fft_size',
+      'fname'])
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [1253, 337]
+    rotation: 0
+    state: disabled
+- name: epy_block_1
+  id: epy_block
+  parameters:
+    _source_code: "\"\"\"\nEmbedded Python Blocks:\n\nEach time this file is saved,\
+      \ GRC will instantiate the first class it finds\nto get ports and parameters\
+      \ of your block. The arguments to __init__  will\nbe the parameters. All of\
+      \ them are required to have default values!\n\"\"\"\n\nimport numpy as np\n\
+      from gnuradio import gr\nimport pmt\n\n\nclass blk(gr.sync_block):  # other\
+      \ base classes are basic_block, decim_block, interp_block\n    \"\"\"Embedded\
+      \ Python Block example - a simple multiply const\"\"\"\n\n    def __init__(self,\
+      \ fft_size=1024):  # only default arguments here\n        self.fft_size = fft_size\n\
+      \        \"\"\"arguments to this function show up as parameters in GRC\"\"\"\
+      \n        gr.sync_block.__init__(\n            self,\n            name='Block\
+      \ for Printing Messages',   # will show up in GRC\n            in_sig=[(np.float32,\
+      \ self.fft_size)],\n            out_sig=None\n        )\n        self.message_port_register_in(pmt.intern('in_port'))\n\
+      \        self.set_msg_handler(pmt.intern('in_port'),\n                     \
+      \        self.handle_msg)\n\n    def work(self, input_items, output_items):\n\
+      \        \"\"\"example: multiply with constant\"\"\"\n        # output_items[0][:]\
+      \ = input_items[0] * self.example_param\n        return len(input_items[0])\n\
+      \    \n    def handle_msg(self, msg):\n        print(pmt.from_long(pmt.to_long(msg)))"
+    affinity: ''
+    alias: ''
+    comment: ''
+    fft_size: '1024'
+    maxoutbuf: '0'
+    minoutbuf: '0'
+  states:
+    _io_cache: ('Block for Printing Messages', 'blk', [('fft_size', '1024')], [('0',
+      'float', 1024), ('in_port', 'message', 1)], [], 'Embedded Python Block example
+      - a simple multiply const', ['fft_size'])
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [1317, 541]
+    rotation: 0
+    state: disabled
+- name: epy_block_2
+  id: epy_block
+  parameters:
+    _source_code: "\"\"\"\nEmbedded Python Blocks:\n\nEach time this file is saved,\
+      \ GRC will instantiate the first class it finds\nto get ports and parameters\
+      \ of your block. The arguments to __init__  will\nbe the parameters. All of\
+      \ them are required to have default values!\n\"\"\"\nimport sys\nimport numpy\
+      \ as np\nfrom gnuradio import gr\nfrom matplotlib import pyplot as plt\nfrom\
+      \ scipy.signal import find_peaks\nfrom configparser import ConfigParser\nimport\
+      \ json\n\n# init parser\nparser = ConfigParser()\nparser.read(\"/home/ltetest/Desktop/recording-mic-detection/python\
+      \ scripts/airspy/config.ini\")\ncname = 'max-peak-detection'\n\nstart_cf = parser.getint(cname,\
+      \ 'starting_center_freq')\nrow_size = parser.getint(cname, 'n_sweeps')\ncol_size\
+      \ = parser.getint(cname, 'sampl_per_sweep')\nfreq_div = parser.getint(cname,\
+      \ 'freq_per_sweep')\n\n# fs = row_size * freq_div\n# N = row_size * col_size\n\
+      \n# init lists / matrices\nfreq_bitmap = np.zeros(row_size,dtype=bool)\nctr\
+      \ = 1\n\nclass blk(gr.sync_block):  # other base classes are basic_block, decim_block,\
+      \ interp_block\n    \"\"\"Embedded Python Block example - a simple multiply\
+      \ const\"\"\"\n\n    def __init__(self, fft_size=1024, center_freq=2e6):  #\
+      \ only default arguments here\n        self.fft_size = fft_size\n        self.center_freq\
+      \ = center_freq\n        \"\"\"arguments to this function show up as parameters\
+      \ in GRC\"\"\"\n        gr.sync_block.__init__(\n            self,\n       \
+      \     name='1-in-N-peak-detection',   # will show up in GRC\n            in_sig=[(np.float32,\
+      \ self.fft_size)],\n            # out_sig=[(np.float32, row_size*col_size)]\n\
+      \            out_sig=None\n        )\n\n\n    def work(self, input_items, output_items):\n\
+      \        global freq_bitmap, ctr\n        \n        # if(np.all(freq_bitmap)):\n\
+      \        #     logfft_mat = np.zeros([row_size,col_size], dtype=np.float32)\n\
+      \n        \"\"\"example: multiply with constant\"\"\"\n        in0 = input_items[0][0]\n\
+      \        k = int(np.around((self.center_freq-start_cf)/freq_div))\n        print(\"\
+      ctr: \",ctr,\" k: \",k)\n        ctr = ctr + 1\n        # print(\"2: Center\
+      \ freq: \", self.center_freq)\n\n        freq_bitmap[k] = True\n\n        #\
+      \ output_items[0][0][:] = logfft_mat.flatten()\n        if(np.all(freq_bitmap)):\n\
+      \            freq_bitmap = np.zeros(row_size, dtype=bool)\n           \n   \
+      \     return len(input_items[0])"
+    affinity: ''
+    alias: ''
+    center_freq: center_freq
+    comment: ''
+    fft_size: fft_size
+    maxoutbuf: '0'
+    minoutbuf: '0'
+  states:
+    _io_cache: ('1-in-N-peak-detection', 'blk', [('fft_size', '1024'), ('center_freq',
+      '2000000.0')], [('0', 'float', 1024)], [], 'Embedded Python Block example -
+      a simple multiply const', ['center_freq', 'fft_size'])
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [1261, 441]
+    rotation: 0
+    state: disabled
+- name: epy_block_3
+  id: epy_block
+  parameters:
+    _source_code: "\"\"\"\nEmbedded Python Blocks:\n\nEach time this file is saved,\
+      \ GRC will instantiate the first class it finds\nto get ports and parameters\
+      \ of your block. The arguments to __init__  will\nbe the parameters. All of\
+      \ them are required to have default values!\n\"\"\"\nimport sys\nimport numpy\
+      \ as np\nfrom gnuradio import gr\nfrom matplotlib import pyplot as plt\nfrom\
+      \ scipy.signal import find_peaks\nfrom configparser import ConfigParser\nimport\
+      \ json\nimport pmt\nimport datetime\n\n# init parser\nparser = ConfigParser()\n\
+      parser.read(\"/home/pi/recording-mic-detection/python scripts/airspy/config.ini\"\
+      )\n\nsdr = 'sdrplay'\npeak_thresh = parser.getfloat(sdr, 'peak_thresh')\n\n\
+      center_freqs = [6.6e6,15e6] # always keep the one with peak at the end\nprint(\"\
+      Center freqs: \", center_freqs)\nn_freq = len(center_freqs)\n\nlocal_ctr = 1\n\
+      msg_ctr = 0\nitr_ctr = 0\nscore = 0\ntotal_itr = 100\n\nclass blk(gr.sync_block):\
+      \  # other base classes are basic_block, decim_block, interp_block\n    \"\"\
+      \"Embedded Python Block example - a simple multiply const\"\"\"\n\n    def __init__(self,\
+      \ fft_size=8192, poll_rate=4):  # only default arguments here\n        self.fft_size\
+      \ = fft_size\n        self.poll_rate = poll_rate\n        \n        \"\"\"arguments\
+      \ to this function show up as parameters in GRC\"\"\"\n        gr.sync_block.__init__(\n\
+      \            self,\n            name='Peak per range detection',   # will show\
+      \ up in GRC\n            in_sig=[(np.float32, self.fft_size)],\n           \
+      \ # out_sig=[(np.float32, row_size*col_size)]\n            out_sig=None\n  \
+      \      )\n        self.message_port_register_out(pmt.intern('out_port'))\n\n\
+      \n\n    def work(self, input_items, output_items):\n        global msg_ctr,\
+      \ local_ctr, itr_ctr, score\n\n        center_freq = center_freqs[msg_ctr]\n\
+      \n        \"\"\" peak detection \"\"\"\n        ly = input_items[0][0]\n   \
+      \     peak_pos = np.argmax(ly)\n        peak_val = ly[peak_pos]\n\n\n      \
+      \  \"\"\" changing center freq \"\"\"\n        if local_ctr == self.poll_rate:\n\
+      \            itr_ctr += 1\n            if peak_val > peak_thresh:\n        \
+      \        if msg_ctr == n_freq - 1: # the last center freq\n                \
+      \    score += 1\n                #print(\"Ctr: \", local_ctr, \", Center freq:\
+      \ \", center_freq/1e6,\\\n                #    \"MHz, Peak found!, Score: \"\
+      ,score,\"/\",itr_ctr)\n\n            else:\n                if msg_ctr != n_freq\
+      \ - 1: # not the last center freq\n                    score += 1\n        \
+      \        #print(\"Ctr: \", local_ctr, \", Center freq: \", center_freq/1e6,\
+      \ \\\n                #    \"MHz, No peak!, Score: \",score,\"/\",itr_ctr)\n\
+      \n            if itr_ctr == total_itr:\n                now = datetime.datetime.now()\n\
+      \                print(\"Time: \", now.hour,\":\",now.minute,\":\",\\\n    \
+      \                now.second,\", OVERALL SCORE: \",score,\"/\",itr_ctr)\n   \
+      \             itr_ctr = 0\n                score = 0\n\n            msg_ctr\
+      \ = (msg_ctr+1)%n_freq\n            new_center_freq = center_freqs[msg_ctr]\n\
+      \            #https://wiki.gnuradio.org/index.php/Soapy#Messages\n         \
+      \   # create pmt dict\n            msg_dict = pmt.make_dict()\n            key0\
+      \ = pmt.intern(\"freq\") # center freq\n            val0 = pmt.from_double(new_center_freq)\n\
+      \            msg_dict = pmt.dict_add(msg_dict, key0, val0)\n\n            self.message_port_pub(pmt.intern(\"\
+      out_port\"), msg_dict)\n            # print(\"Switching freq to \", new_center_freq/1e6,\"\
+      \ MHz\")\n\n            local_ctr = 1\n        else:    \n            local_ctr\
+      \ += 1\n\n        return len(input_items[0])"
+    affinity: ''
+    alias: ''
+    comment: ''
+    fft_size: fft_size
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    poll_rate: '1'
+  states:
+    _io_cache: ('Peak per range detection', 'blk', [('fft_size', '8192'), ('poll_rate',
+      '4')], [('0', 'float', 8192)], [('out_port', 'message', 1)], 'Embedded Python
+      Block example - a simple multiply const', ['fft_size', 'poll_rate'])
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [962, 368]
+    rotation: 0
+    state: disabled
+- name: logpwrfft_x_0
+  id: logpwrfft_x
+  parameters:
+    affinity: ''
+    alias: ''
+    average: 'False'
+    avg_alpha: '0.1'
+    comment: ''
+    fft_size: fft_size
+    frame_rate: '15'
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    ref_scale: '2'
+    sample_rate: samp_rate
+    type: complex
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [740, 249]
+    rotation: 0
+    state: enabled
+- name: qtgui_freq_sink_x_0
+  id: qtgui_freq_sink_x
+  parameters:
+    affinity: ''
+    alias: ''
+    alpha1: '1.0'
+    alpha10: '1.0'
+    alpha2: '1.0'
+    alpha3: '1.0'
+    alpha4: '1.0'
+    alpha5: '1.0'
+    alpha6: '1.0'
+    alpha7: '1.0'
+    alpha8: '1.0'
+    alpha9: '1.0'
+    autoscale: 'False'
+    average: '1.0'
+    axislabels: 'True'
+    bw: samp_rate
+    color1: '"blue"'
+    color10: '"dark blue"'
+    color2: '"red"'
+    color3: '"green"'
+    color4: '"black"'
+    color5: '"cyan"'
+    color6: '"magenta"'
+    color7: '"yellow"'
+    color8: '"dark red"'
+    color9: '"dark green"'
+    comment: ''
+    ctrlpanel: 'False'
+    fc: center_freq
+    fftsize: fft_size
+    freqhalf: 'True'
+    grid: 'False'
+    gui_hint: ''
+    label: Relative Gain
+    label1: ''
+    label10: ''''''
+    label2: ''''''
+    label3: ''''''
+    label4: ''''''
+    label5: ''''''
+    label6: ''''''
+    label7: ''''''
+    label8: ''''''
+    label9: ''''''
+    legend: 'True'
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    name: '""'
+    nconnections: '1'
+    showports: 'False'
+    tr_chan: '0'
+    tr_level: '0.0'
+    tr_mode: qtgui.TRIG_MODE_FREE
+    tr_tag: '""'
+    type: complex
+    units: dB
+    update_time: '0.10'
+    width1: '1'
+    width10: '1'
+    width2: '1'
+    width3: '1'
+    width4: '1'
+    width5: '1'
+    width6: '1'
+    width7: '1'
+    width8: '1'
+    width9: '1'
+    wintype: firdes.WIN_BLACKMAN_hARRIS
+    ymax: '10'
+    ymin: '-140'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [749, 121]
+    rotation: 0
+    state: enabled
+- name: qtgui_vector_sink_f_0
+  id: qtgui_vector_sink_f
+  parameters:
+    affinity: ''
+    alias: ''
+    alpha1: '1.0'
+    alpha10: '1.0'
+    alpha2: '1.0'
+    alpha3: '1.0'
+    alpha4: '1.0'
+    alpha5: '1.0'
+    alpha6: '1.0'
+    alpha7: '1.0'
+    alpha8: '1.0'
+    alpha9: '1.0'
+    autoscale: 'False'
+    average: '1.0'
+    color1: '"blue"'
+    color10: '"dark blue"'
+    color2: '"red"'
+    color3: '"green"'
+    color4: '"black"'
+    color5: '"cyan"'
+    color6: '"magenta"'
+    color7: '"yellow"'
+    color8: '"dark red"'
+    color9: '"dark green"'
+    comment: ''
+    grid: 'False'
+    gui_hint: ''
+    label1: ''
+    label10: ''
+    label2: ''
+    label3: ''
+    label4: ''
+    label5: ''
+    label6: ''
+    label7: ''
+    label8: ''
+    label9: ''
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    name: '""'
+    nconnections: '1'
+    ref_level: '0'
+    showports: 'False'
+    update_time: '0.10'
+    vlen: fft_size
+    width1: '1'
+    width10: '1'
+    width2: '1'
+    width3: '1'
+    width4: '1'
+    width5: '1'
+    width6: '1'
+    width7: '1'
+    width8: '1'
+    width9: '1'
+    x_axis_label: '"x-Axis"'
+    x_start: '0'
+    x_step: '1.0'
+    x_units: '""'
+    y_axis_label: '"y-Axis"'
+    y_units: '""'
+    ymax: '10'
+    ymin: '-140'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [989, 177]
+    rotation: 0
+    state: enabled
+- name: soapy_source_0
+  id: soapy_source
+  parameters:
+    affinity: ''
+    agc0: 'False'
+    agc1: 'False'
+    alias: ''
+    amp_gain0: '0'
+    ant0: RX
+    ant1: RX2
+    args: sdrplay
+    balance0: '0'
+    balance1: '0'
+    bw0: filter_bandwidth
+    bw1: '0'
+    center_freq0: center_freq
+    center_freq1: '0'
+    clock_rate: '0'
+    clock_source: ''
+    comment: ''
+    correction0: '0'
+    correction1: '0'
+    dc_offset0: '0'
+    dc_offset1: '0'
+    dc_removal0: 'True'
+    dc_removal1: 'True'
+    dev: driver=rtlsdr
+    devname: sdrplay
+    gain_mode0: Overall
+    gain_mode1: Overall
+    ifgr_gain: '59'
+    lna_gain0: '10'
+    lna_gain1: '10'
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    mix_gain0: '10'
+    nchan: '1'
+    nco_freq0: '0'
+    nco_freq1: '0'
+    overall_gain0: '10'
+    overall_gain1: '10'
+    pga_gain0: '24'
+    pga_gain1: '24'
+    rfgr_gain: '9'
+    rxvga1_gain: '5'
+    rxvga2_gain: '0'
+    samp_rate: samp_rate
+    sdrplay_agc_setpoint: '-30'
+    sdrplay_biastee: 'False'
+    sdrplay_dabnotch: 'False'
+    sdrplay_if_mode: Zero-IF
+    sdrplay_rfnotch: 'False'
+    settings0: ''
+    settings1: ''
+    stream_args: ''
+    tia_gain0: '0'
+    tia_gain1: '0'
+    tune_args0: ''
+    tune_args1: ''
+    tuner_gain0: '10'
+    type: fc32
+    vga_gain0: '10'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [93, 265]
+    rotation: 0
+    state: enabled
+
+connections:
+- [blocks_throttle_0, '0', blocks_null_sink_0, '0']
+- [blocks_throttle_0, '0', logpwrfft_x_0, '0']
+- [blocks_throttle_0, '0', qtgui_freq_sink_x_0, '0']
+- [epy_block_0, '0', blocks_vector_sink_x_1, '0']
+- [epy_block_0, '0', epy_block_1, '0']
+- [epy_block_0, out_port, epy_block_1, in_port]
+- [epy_block_3, out_port, soapy_source_0, command]
+- [logpwrfft_x_0, '0', epy_block_3, '0']
+- [logpwrfft_x_0, '0', qtgui_vector_sink_f_0, '0']
+- [soapy_source_0, '0', blocks_throttle_0, '0']
+
+metadata:
+  file_format: 1
